@@ -129,13 +129,11 @@ class AsyncClient:
     ) -> URL:
 
         url_obj = url if isinstance(url, URL) else URL(url, self.base_url)
-        url_obj.search = URLSearchParams(
-            {
-                **self.default_params,
-                **url_obj.search_params,
-                **(URLSearchParams(params)),
-            }
-        ).to_string()
+        pairs: list[tuple[str, str]] = []
+        for layer in (self.default_params, url_obj.search_params, URLSearchParams(params)):
+            keys = set(layer.keys())
+            pairs = [pair for pair in pairs if pair[0] not in keys] + list(layer.items())
+        url_obj.search = URLSearchParams(pairs).to_string()
         return url_obj
 
     def _merge_headers(
