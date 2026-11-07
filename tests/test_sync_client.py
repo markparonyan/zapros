@@ -42,3 +42,13 @@ def test_request_trailers_passed_through():
     assert handler.requests[0].trailers is not None
     assert handler.requests[0].trailers["x-checksum"] == "abc"
     assert handler.requests[1].trailers is None
+
+
+def test_repeated_query_params_preserved():
+    handler = CapturingHandler()
+    with Client(handler=handler, default_params={"d": ["1", "2"], "k": "default"}) as client:
+        client.get("https://example.com/?u=a&u=b&k=url", params={"c": ["x", "y"], "k": ["z", "w"]})
+        client.get("https://example.com/?u=a&u=b")
+
+    assert str(handler.requests[0].url) == "https://example.com/?d=1&d=2&u=a&u=b&c=x&c=y&k=z&k=w"
+    assert str(handler.requests[1].url) == "https://example.com/?d=1&d=2&k=default&u=a&u=b"
